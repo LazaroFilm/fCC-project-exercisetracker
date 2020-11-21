@@ -9,5 +9,8 @@
       "NODE_ENV": "development"
   },
   "ext": "js,json,html,css",
-  "delay": "2500"
+  "delay": "2500",
+  "events": {
+    "start": "clear"
+  }
 }
