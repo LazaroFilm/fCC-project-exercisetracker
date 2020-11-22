@@ -9,7 +9,7 @@ mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost/exercise-track', 
   useNewUrlParser: true,
   useUnifiedTopology: true,
   useFindAndModify: false
-  });
+});
 
 app.use(cors());
 
@@ -34,7 +34,7 @@ const usernameSchema = new Schema({
   // description: { type: String, required: false },
   // duration: { type: Number, required: false },
   // date: { type: String, required: false }
-}, {versionKey: false});
+}, { versionKey: false });
 const User = mongoose.model("Profiles", usernameSchema);
 
 const exerciseSchema = new Schema({
@@ -42,7 +42,7 @@ const exerciseSchema = new Schema({
   description: { type: String, required: true },
   duration: { type: Number, required: true },
   date: { type: String, required: true }
-}, {versionKey: false});
+}, { versionKey: false });
 const Exercise = mongoose.model("Sessions", exerciseSchema);
 
 // 
@@ -102,6 +102,7 @@ app.post('/api/exercise/add', urlencodedParser, async (req, res) => {
   console.log(req.body);
   const id = { "_id": req.body.userId }
   const checkId = await User.findOne(id)
+  console.log(checkId)
   let sessionDate;
   if (dateRegEx.test(req.body.date)) {
     sessionDate = new Date(req.body.date);
@@ -113,19 +114,46 @@ app.post('/api/exercise/add', urlencodedParser, async (req, res) => {
   console.log(sessionDate);
   if (checkId && req.body.description && req.body.duration) {
     const entry = {
+      userId: req.body.userId,
       description: req.body.description,
       duration: req.body.duration,
-      date: sessionDate.toString().split(' 00:00')[0]
+      date: sessionDate
     };
     console.log("entry:", entry)
-    
-    // await User.findOneAndUpdate(id, entry)
-    // res.json(await User.findOne(id))
-    // console.log(await User.findOne(id))
+    const newExercise = new Exercise(entry);
+    newExercise.save((err, res) => {
+      if (err) console.log(err)
+    });
+    res.json({
+      _id: req.body.userId,
+      username: checkId.username,
+      date: sessionDate.toDateString(),
+      duration: parseInt(req.body.duration),
+      description: req.body.description
+    })
     console.log("#################")
   } else {
     res.send("Please fill all mandatory fields correctly")
   };
+});
+
+// GET all exercises
+app.get('/api/exercise/log', async (req, res) => {
+  console.log("query userId", req.query.userId)
+    const userId = req.query.userId
+    const user = await User.findOne({'_id': userId});
+  if (user) { //check if user exists
+    if (req.query.from || req.query.to) { // check for extra query parameters
+      console.log(`from: ${req.query.from} - to: ${req.query.to}`)
+      const partialLog = await Exercise.find({'userId': userId}, {'_id': 0, 'userId': 0})
+      res.json({'id': user._id, 'username': user.username, 'count': log.length, partialLog})
+    } else {
+    const log = await Exercise.find({'userId': userId}, {'_id': 0, 'userId': 0})
+    res.json({'id': user._id, 'username': user.username, 'count': log.length, log})
+    }
+  }else{
+    res.send("userId does not match")
+  }
 });
 
 // Not found middleware
