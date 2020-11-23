@@ -70,7 +70,7 @@ const dateRegEx = /^\d{4}-((0[1-9])|(1[0-2]))-(0[1-9]|([1-2]\d)|(3[0-1]))$/;
 
 // POST new username and save it to the db.
 app.post("/api/exercise/new-user", urlencodedParser, async (req, res) => {
-  console.log("#####new-user#####")
+  console.log("#####new-user#####");
   console.log(req.body);
   const usernameExists = await User.findOne({ username: req.body.username });
   if (req.body.username === "") {
@@ -95,7 +95,7 @@ app.post("/api/exercise/new-user", urlencodedParser, async (req, res) => {
 
 // GET all users
 app.get("/api/exercise/users", (req, res) => {
-  console.log("$$$$$users$$$$$")
+  console.log("$$$$$users$$$$$");
   console.log("getting the colection");
   // const collection = User.find({});
   User.find({}, (err, result) => {
@@ -109,7 +109,7 @@ app.get("/api/exercise/users", (req, res) => {
 
 // POST new exercises
 app.post("/api/exercise/add", urlencodedParser, async (req, res) => {
-  console.log("#####add#####")
+  console.log("#####add#####");
   console.log(req.body);
   const id = { _id: req.body.userId };
   const checkId = await User.findOne(id);
@@ -150,7 +150,7 @@ app.post("/api/exercise/add", urlencodedParser, async (req, res) => {
 // GET all exercises
 app.get("/api/exercise/log", async (req, res) => {
   console.log("#####log#####");
-  console.log(req.query)
+  console.log(req.query);
   const user = await User.findOne({ _id: req.query.userId });
   if (user) {
     //check if user exists
@@ -166,7 +166,16 @@ app.get("/api/exercise/log", async (req, res) => {
               $lt: new Date(req.query.to).toISOString(),
             },
           },
-          { _id: 0, userId: 0 }
+          { _id: 0, userId: 0 },
+          (err, logged) => {
+            console.log("logged:", logged);
+            return logged.forEach((instance, index, array) => {
+              console.log(instance);
+              array[index] = instance.toObject();
+              array[index].date = array[index].date.toDateString();
+            });
+            log = logged;
+          }
         ).limit(Number(req.query.limit));
         console.log({
           _id: user._id,
@@ -192,7 +201,16 @@ app.get("/api/exercise/log", async (req, res) => {
             userId: req.query.userId,
             date: { $gt: new Date(req.query.from).toISOString() },
           },
-          { _id: 0, userId: 0 }
+          { _id: 0, userId: 0 },
+          (err, logged) => {
+            console.log("logged:", logged);
+            return logged.forEach((instance, index, array) => {
+              console.log(instance);
+              array[index] = instance.toObject();
+              array[index].date = array[index].date.toDateString();
+            });
+            log = logged;
+          }
         ).limit(Number(req.query.limit));
         console.log({
           _id: user._id,
@@ -218,7 +236,16 @@ app.get("/api/exercise/log", async (req, res) => {
             userId: req.query.userId,
             date: { $lt: new Date(req.query.to).toISOString() },
           },
-          { _id: 0, userId: 0 }
+          { _id: 0, userId: 0 },
+          (err, logged) => {
+            console.log("logged:", logged);
+            return logged.forEach((instance, index, array) => {
+              console.log(instance);
+              array[index] = instance.toObject();
+              array[index].date = array[index].date.toDateString();
+            });
+            log = logged;
+          }
         ).limit(Number(req.query.limit));
         console.log({
           _id: user._id,
@@ -236,16 +263,24 @@ app.get("/api/exercise/log", async (req, res) => {
         res.send("Invalid to date format");
       }
     } else {
-      const log = await Exercise.find(
+      let log = await Exercise.find(
         { userId: req.query.userId },
-        { _id: 0, userId: 0 }
+        { _id: 0, userId: 0 },
+        (err, logged) => { // TODO the whole thing is just weird. https://kuttler.eu/code/modifying-mongoose-query-objects/
+          console.log("logged:", logged);
+          return logged.forEach((instance, index, array) => {
+            console.log(instance);
+            array[index] = instance.toObject();
+            array[index].date = array[index].date.toDateString();
+          });
+        }
       ).limit(Number(req.query.limit));
       console.log({
         _id: user._id,
         username: user.username,
         count: log.length,
         log,
-      })
+      });
       res.json({
         _id: user._id,
         username: user.username,
