@@ -68,10 +68,10 @@ app.post("/api/exercise/new-user", urlencodedParser, async (req, res) => {
   console.log(req.body);
   const usernameExists = await User.findOne({ username: req.body.username });
   if (req.body.username === "") {
-    console.warning("Please ender a username");
+    console.warn("Please ender a username");
     res.send("Please ender a username");
   } else if (usernameExists) {
-    console.warning("Username already taken");
+    console.warn("Username already taken");
     res.send("Username already taken");
   } else {
     const newId = await makeNewId();
@@ -139,7 +139,7 @@ app.post("/api/exercise/add", urlencodedParser, async (req, res) => {
     console.log(result);
     res.json(result);
   } else {
-    console.warning("Please fill all mandatory fields correctly");
+    console.warn("Please fill all mandatory fields correctly");
     res.send("Please fill all mandatory fields correctly");
   }
 });
@@ -166,7 +166,7 @@ app.get("/api/exercise/log", async (req, res) => {
           },
         };
       } else {
-        console.warning("Invalid from or to date format");
+        console.warn("Invalid from or to date format");
         res.send("Invalid from or to date format");
       }
     } else if (req.query.from) {
@@ -178,7 +178,7 @@ app.get("/api/exercise/log", async (req, res) => {
           date: { $gt: new Date(req.query.from).toISOString() },
         };
       } else {
-        console.warning("Invalid from date format");
+        console.warn("Invalid from date format");
         res.send("Invalid from date format");
       }
     } else if (req.query.to) {
@@ -190,7 +190,7 @@ app.get("/api/exercise/log", async (req, res) => {
           date: { $lt: new Date(req.query.to).toISOString() },
         };
       } else {
-        console.warning("Invalid to date format");
+        console.warn("Invalid to date format");
         res.send("Invalid to date format");
       }
     } else {
@@ -213,7 +213,7 @@ app.get("/api/exercise/log", async (req, res) => {
     console.log(result);
     res.json(result);
   } else {
-    console.warning("userId does not match");
+    console.warn("userId does not match");
     res.send("userId does not match");
   }
 });
