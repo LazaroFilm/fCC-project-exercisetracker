@@ -1,3 +1,4 @@
+require("dotenv").config();
 const express = require("express");
 const app = express();
 const bodyParser = require("body-parser");
@@ -5,14 +6,18 @@ const cors = require("cors");
 const mongoose = require("mongoose");
 const { nanoid } = require("nanoid");
 const { Schema } = mongoose;
-mongoose.connect(
-  process.env.MONGO_URI || "mongodb://localhost/exercise-track",
-  {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-    useFindAndModify: false,
-  }
-);
+// console.log("process.env", process.env);
+mongoose.connect(process.env.MONGO_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+  useFindAndModify: false,
+});
+
+const db = mongoose.connection;
+db.on("error", console.error.bind(console, "connection error:"));
+db.once("open", () => {
+  console.log("Connected to db.");
+});
 
 app.use(cors());
 
@@ -241,6 +246,6 @@ app.use((err, req, res, next) => {
   res.status(errCode).type("txt").send(errMessage);
 });
 
-const listener = app.listen(process.env.PORT || 3000, () => {
+const listener = app.listen(process.env.PORT, () => {
   console.log("Your app is listening on port " + listener.address().port);
 });
