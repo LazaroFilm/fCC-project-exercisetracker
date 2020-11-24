@@ -19,7 +19,6 @@ app.use(cors());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 const urlencodedParser = bodyParser.urlencoded({ extended: false });
-// console.log(urlencodedParser);
 
 app.use(express.static("public"));
 app.get("/", (req, res) => {
@@ -27,16 +26,12 @@ app.get("/", (req, res) => {
 });
 
 // My Code //////////
-console.log("Hello World!");
 
 // Mongoose
 const usernameSchema = new Schema(
   {
     _id: { type: String, required: true },
     username: { type: String, required: true },
-    // description: { type: String, required: false },
-    // duration: { type: Number, required: false },
-    // date: { type: String, required: false }
   },
   { versionKey: false }
 );
@@ -53,7 +48,7 @@ const exerciseSchema = new Schema(
 );
 const Exercise = mongoose.model("Sessions", exerciseSchema);
 
-//
+
 const makeNewId = async () => {
   let newId = nanoid(10);
   // let newId = "aabbcc" // used to test already existing Id.
@@ -84,7 +79,7 @@ app.post("/api/exercise/new-user", urlencodedParser, async (req, res) => {
       username: req.body.username,
     });
     username.save((err, res) => {
-      if (err) console.log(err);
+      if (err) console.error(err);
     });
     res.json({
       _id: newId,
@@ -97,10 +92,9 @@ app.post("/api/exercise/new-user", urlencodedParser, async (req, res) => {
 app.get("/api/exercise/users", (req, res) => {
   console.log("$$$$$users$$$$$");
   console.log("getting the colection");
-  // const collection = User.find({});
   User.find({}, (err, result) => {
     if (err) {
-      console.log(err);
+      console.error(err);
     } else {
       res.json(result);
     }
@@ -117,7 +111,6 @@ app.post("/api/exercise/add", urlencodedParser, async (req, res) => {
   let sessionDate;
   if (dateRegEx.test(req.body.date)) {
     sessionDate = new Date(req.body.date);
-    // console.log("You entered the date: ", sessionDate.toISOString().split('T')[0])
   } else {
     sessionDate = new Date();
     console.log("today's date is ", sessionDate);
@@ -133,7 +126,7 @@ app.post("/api/exercise/add", urlencodedParser, async (req, res) => {
     console.log("entry:", entry);
     const newExercise = new Exercise(entry);
     newExercise.save((err, res) => {
-      if (err) console.log(err);
+      if (err) console.error(err);
     });
     res.json({
       _id: req.body.userId,
@@ -152,43 +145,22 @@ app.get("/api/exercise/log", async (req, res) => {
   console.log("#####log#####");
   console.log(req.query);
   const user = await User.findOne({ _id: req.query.userId });
+  let select;
   if (user) {
     //check if user exists
     if (req.query.from && req.query.to) {
       // from and to dates
       if (dateRegEx.test(req.query.from) && dateRegEx.test(req.query.to)) {
-        console.log(`from: ${req.query.from} - to: ${req.query.to}`);
-        const partialLog = await Exercise.find(
-          {
-            userId: req.query.userId,
-            date: {
-              $gt: new Date(req.query.from).toISOString(),
-              $lt: new Date(req.query.to).toISOString(),
-            },
+        console.log(
+          `from: ${req.query.from} - to: ${req.query.to} = limit: ${req.query.limit}`
+        );
+        select = {
+          userId: req.query.userId,
+          date: {
+            $gt: new Date(req.query.from).toISOString(),
+            $lt: new Date(req.query.to).toISOString(),
           },
-          { _id: 0, userId: 0 },
-          (err, logged) => {
-            console.log("logged:", logged);
-            return logged.forEach((instance, index, array) => {
-              console.log(instance);
-              array[index] = instance.toObject();
-              array[index].date = array[index].date.toDateString();
-            });
-            log = logged;
-          }
-        ).limit(Number(req.query.limit));
-        console.log({
-          _id: user._id,
-          username: user.username,
-          count: partialLog.length,
-          partialLog,
-        });
-        res.json({
-          _id: user._id,
-          username: user.username,
-          count: partialLog.length,
-          partialLog,
-        });
+        };
       } else {
         res.send("Invalid from or to date format");
       }
@@ -196,34 +168,10 @@ app.get("/api/exercise/log", async (req, res) => {
       // from only
       if (dateRegEx.test(req.query.from)) {
         console.log(`from: ${req.query.from}`);
-        const partialLog = await Exercise.find(
-          {
-            userId: req.query.userId,
-            date: { $gt: new Date(req.query.from).toISOString() },
-          },
-          { _id: 0, userId: 0 },
-          (err, logged) => {
-            console.log("logged:", logged);
-            return logged.forEach((instance, index, array) => {
-              console.log(instance);
-              array[index] = instance.toObject();
-              array[index].date = array[index].date.toDateString();
-            });
-            log = logged;
-          }
-        ).limit(Number(req.query.limit));
-        console.log({
-          _id: user._id,
-          username: user.username,
-          count: partialLog.length,
-          partialLog,
-        });
-        res.json({
-          _id: user._id,
-          username: user.username,
-          count: partialLog.length,
-          partialLog,
-        });
+        const select = {
+          userId: req.query.userId,
+          date: { $gt: new Date(req.query.from).toISOString() },
+        };
       } else {
         res.send("Invalid from date format");
       }
@@ -231,63 +179,34 @@ app.get("/api/exercise/log", async (req, res) => {
       // to only
       if (dateRegEx.test(req.query.to)) {
         console.log(`to: ${req.query.to}`);
-        const partialLog = await Exercise.find(
-          {
-            userId: req.query.userId,
-            date: { $lt: new Date(req.query.to).toISOString() },
-          },
-          { _id: 0, userId: 0 },
-          (err, logged) => {
-            console.log("logged:", logged);
-            return logged.forEach((instance, index, array) => {
-              console.log(instance);
-              array[index] = instance.toObject();
-              array[index].date = array[index].date.toDateString();
-            });
-            log = logged;
-          }
-        ).limit(Number(req.query.limit));
-        console.log({
-          _id: user._id,
-          username: user.username,
-          count: partialLog.length,
-          partialLog,
-        });
-        res.json({
-          _id: user._id,
-          username: user.username,
-          count: partialLog.length,
-          partialLog,
-        });
+        select = {
+          userId: req.query.userId,
+          date: { $lt: new Date(req.query.to).toISOString() },
+        };
       } else {
         res.send("Invalid to date format");
       }
     } else {
-      let log = await Exercise.find(
-        { userId: req.query.userId },
-        { _id: 0, userId: 0 },
-        (err, logged) => { // TODO the whole thing is just weird. https://kuttler.eu/code/modifying-mongoose-query-objects/
-          console.log("logged:", logged);
-          return logged.forEach((instance, index, array) => {
-            console.log(instance);
-            array[index] = instance.toObject();
-            array[index].date = array[index].date.toDateString();
-          });
-        }
-      ).limit(Number(req.query.limit));
-      console.log({
-        _id: user._id,
-        username: user.username,
-        count: log.length,
-        log,
-      });
-      res.json({
-        _id: user._id,
-        username: user.username,
-        count: log.length,
-        log,
-      });
+      // no date range
+      select = { userId: req.query.userId };
     }
+    
+    console.log("Select", select);
+    const sessions = await Exercise.find(select, { _id: 0, userId: 0 }).limit(
+      Number(req.query.limit)
+    );
+    sessions.forEach((instance, index, array) => {
+      array[index] = instance.toObject();
+      array[index].date = array[index].date.toDateString();
+    });
+    const result = {
+      _id: user._id,
+      username: user.username,
+      count: sessions.length,
+      log: sessions,
+    };
+    console.log("result:" , result);
+    res.json(result);
   } else {
     res.send("userId does not match");
   }
