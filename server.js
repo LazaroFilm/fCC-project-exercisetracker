@@ -48,7 +48,6 @@ const exerciseSchema = new Schema(
 );
 const Exercise = mongoose.model("Sessions", exerciseSchema);
 
-
 const makeNewId = async () => {
   let newId = nanoid(10);
   // let newId = "aabbcc" // used to test already existing Id.
@@ -69,8 +68,10 @@ app.post("/api/exercise/new-user", urlencodedParser, async (req, res) => {
   console.log(req.body);
   const usernameExists = await User.findOne({ username: req.body.username });
   if (req.body.username === "") {
+    console.warning("Please ender a username");
     res.send("Please ender a username");
   } else if (usernameExists) {
+    console.warning("Username already taken");
     res.send("Username already taken");
   } else {
     const newId = await makeNewId();
@@ -81,21 +82,23 @@ app.post("/api/exercise/new-user", urlencodedParser, async (req, res) => {
     username.save((err, res) => {
       if (err) console.error(err);
     });
-    res.json({
+    const result = {
       _id: newId,
       username: req.body.username,
-    });
+    };
+    console.log(result);
+    res.json(result);
   }
 });
 
 // GET all users
 app.get("/api/exercise/users", (req, res) => {
   console.log("$$$$$users$$$$$");
-  console.log("getting the colection");
   User.find({}, (err, result) => {
     if (err) {
       console.error(err);
     } else {
+      console.log(result);
       res.json(result);
     }
   });
@@ -115,7 +118,6 @@ app.post("/api/exercise/add", urlencodedParser, async (req, res) => {
     sessionDate = new Date();
     console.log("today's date is ", sessionDate);
   }
-  console.log(sessionDate);
   if (checkId && req.body.description && req.body.duration) {
     const entry = {
       userId: req.body.userId,
@@ -123,19 +125,21 @@ app.post("/api/exercise/add", urlencodedParser, async (req, res) => {
       duration: req.body.duration,
       date: sessionDate,
     };
-    console.log("entry:", entry);
     const newExercise = new Exercise(entry);
     newExercise.save((err, res) => {
       if (err) console.error(err);
     });
-    res.json({
+    const result = {
       _id: req.body.userId,
       username: checkId.username,
       date: sessionDate.toDateString(),
       duration: parseInt(req.body.duration),
       description: req.body.description,
-    });
+    };
+    console.log(result);
+    res.json(result);
   } else {
+    console.warning("Please fill all mandatory fields correctly");
     res.send("Please fill all mandatory fields correctly");
   }
 });
@@ -162,6 +166,7 @@ app.get("/api/exercise/log", async (req, res) => {
           },
         };
       } else {
+        console.warning("Invalid from or to date format");
         res.send("Invalid from or to date format");
       }
     } else if (req.query.from) {
@@ -173,6 +178,7 @@ app.get("/api/exercise/log", async (req, res) => {
           date: { $gt: new Date(req.query.from).toISOString() },
         };
       } else {
+        console.warning("Invalid from date format");
         res.send("Invalid from date format");
       }
     } else if (req.query.to) {
@@ -184,14 +190,13 @@ app.get("/api/exercise/log", async (req, res) => {
           date: { $lt: new Date(req.query.to).toISOString() },
         };
       } else {
+        console.warning("Invalid to date format");
         res.send("Invalid to date format");
       }
     } else {
       // no date range
       select = { userId: req.query.userId };
     }
-    
-    console.log("Select", select);
     const sessions = await Exercise.find(select, { _id: 0, userId: 0 }).limit(
       Number(req.query.limit)
     );
@@ -205,9 +210,10 @@ app.get("/api/exercise/log", async (req, res) => {
       count: sessions.length,
       log: sessions,
     };
-    console.log("result:" , result);
+    console.log(result);
     res.json(result);
   } else {
+    console.warning("userId does not match");
     res.send("userId does not match");
   }
 });
